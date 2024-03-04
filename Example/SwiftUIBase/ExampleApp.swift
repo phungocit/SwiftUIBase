@@ -1,0 +1,21 @@
+//
+//  ExampleApp.swift
+//  SwiftUIBase_Example
+//
+//  Created by Tran Ngoc Phu on 01/03/2024.
+//  Copyright © 2024 CocoaPods. All rights reserved.
+//
+
+import SwiftUI
+
+@main
+struct ExampleApp: App {
+    var body: some Scene {
+        WindowGroup {
+            NavigationView {
+                HomeView()
+            }
+            .navigationViewStyle(.stack)
+        }
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "alamofire",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Alamofire/Alamofire.git",
+      "state" : {
+        "revision" : "723fa5a6c65812aec4a0d7cc432ee198883b6e00",
+        "version" : "5.9.0"
+      }
+    },
+    {
+      "identity" : "swiftuibase",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/phungocit/SwiftUIBase.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "202ac99455babc285107f2f7b0d6fa7097c0d1da"
+      }
+    }
+  ],
+  "version" : 2
+}

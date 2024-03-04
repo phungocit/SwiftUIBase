@@ -1,6 +1,6 @@
 # SwiftUIBase
 
-An API service using Alamofire for SwiftUI, and some common Views
+An API service using Alamofire for SwiftUI and some common Views
 
 ## Example
 

@@ -5,11 +5,12 @@
 //  Created by Foo Tran on 09/26/2023.
 //
 
-import SwiftUIBase
 import SwiftUI
+import SwiftUIBase
 
 struct UsersView: View {
     @StateObject private var viewModel = UsersViewModel()
+    @State private var isShowLoading = false
 
     var body: some View {
         ScrollView {
@@ -20,8 +21,13 @@ struct UsersView: View {
             }
             .padding()
         }
-        .loadingView(isShowing: $viewModel.isShowLoading)
+        .loadingView(isShowing: $isShowLoading)
         .navigationTitle("Users")
+        .task {
+            isShowLoading = true
+            await viewModel.getUsers()
+            isShowLoading = false
+        }
     }
 
     func userItem(user: UserModel) -> some View {

@@ -5,12 +5,12 @@
 //  Created by Foo Tran on 09/26/2023.
 //
 
-import SwiftUIBase
 import SwiftUI
+import SwiftUIBase
 
 struct ReposView: View {
     @StateObject private var viewModel = ReposViewModel()
-
+    @State private var isShowLoading = false
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading) {
@@ -20,8 +20,13 @@ struct ReposView: View {
             }
             .padding()
         }
-        .loadingView(isShowing: $viewModel.isShowLoading)
+        .loadingView(isShowing: $isShowLoading)
         .navigationTitle("Repos")
+        .task {
+            isShowLoading = true
+            await viewModel.getRepos()
+            isShowLoading = false
+        }
     }
 
     func repoItem(repo: RepoModel) -> some View {

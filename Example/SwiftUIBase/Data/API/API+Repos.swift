@@ -10,8 +10,8 @@ import SwiftUIBase
 
 // MARK: - GetRepos
 extension APIService {
-    func getRepos(_ input: GetReposInput) -> Observable<GetReposOutput> {
-        request(input)
+    func getRepos(_ input: GetReposInput) async throws -> GetReposOutput {
+        try await request(input)
     }
 }
 
@@ -41,7 +41,7 @@ extension APIService {
                 )
             )
 
-            keyDecodingStrategy = .useDefaultKeys
+            keyStrategyForDecodeResponse = .useDefaultKeys
         }
     }
 }

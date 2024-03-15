@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,7 +11,6 @@
 		47419F052B92221D00C340C0 /* API+Users.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47419F042B92221D00C340C0 /* API+Users.swift */; };
 		47419F082B9223C200C340C0 /* UsersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47419F072B9223C200C340C0 /* UsersViewModel.swift */; };
 		47419F0A2B92247500C340C0 /* UsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47419F092B92247500C340C0 /* UsersView.swift */; };
-		474C57C72B960A0200DCCB67 /* SwiftUIBase in Frameworks */ = {isa = PBXBuildFile; productRef = 474C57C62B960A0200DCCB67 /* SwiftUIBase */; };
 		474CD1012B92CAE400015A30 /* UINavigationController+SwipeBack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474CD1002B92CAE400015A30 /* UINavigationController+SwipeBack.swift */; };
 		47DB75DA2AC95C7700380A35 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DB75C72AC95C7700380A35 /* HomeViewModel.swift */; };
 		47DB75DC2AC95C7700380A35 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DB75C92AC95C7700380A35 /* HomeView.swift */; };
@@ -29,6 +28,7 @@
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
+		AD35AFCD2BA0377E0024AA62 /* SwiftUIBase in Frameworks */ = {isa = PBXBuildFile; productRef = AD35AFCC2BA0377E0024AA62 /* SwiftUIBase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,7 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				474C57C72B960A0200DCCB67 /* SwiftUIBase in Frameworks */,
+				AD35AFCD2BA0377E0024AA62 /* SwiftUIBase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,7 +273,7 @@
 			);
 			name = SwiftUIBase_Example;
 			packageProductDependencies = (
-				474C57C62B960A0200DCCB67 /* SwiftUIBase */,
+				AD35AFCC2BA0377E0024AA62 /* SwiftUIBase */,
 			);
 			productName = SwiftUIBase;
 			productReference = 607FACD01AFB9204008FA782 /* SwiftUIBase_Example.app */;
@@ -329,7 +329,7 @@
 			);
 			mainGroup = 607FACC71AFB9204008FA782;
 			packageReferences = (
-				474C57C52B960A0200DCCB67 /* XCRemoteSwiftPackageReference "SwiftUIBase" */,
+				AD35AFCB2BA0377E0024AA62 /* XCLocalSwiftPackageReference ".." */,
 			);
 			productRefGroup = 607FACD11AFB9204008FA782 /* Products */;
 			projectDirPath = "";
@@ -644,21 +644,16 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		474C57C52B960A0200DCCB67 /* XCRemoteSwiftPackageReference "SwiftUIBase" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/phungocit/SwiftUIBase.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		AD35AFCB2BA0377E0024AA62 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		474C57C62B960A0200DCCB67 /* SwiftUIBase */ = {
+		AD35AFCC2BA0377E0024AA62 /* SwiftUIBase */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 474C57C52B960A0200DCCB67 /* XCRemoteSwiftPackageReference "SwiftUIBase" */;
 			productName = SwiftUIBase;
 		};
 /* End XCSwiftPackageProductDependency section */

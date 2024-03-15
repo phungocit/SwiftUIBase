@@ -10,8 +10,8 @@ import SwiftUIBase
 
 // MARK: - GetUsers
 extension APIService {
-    func getUsers(_ input: GetUsersInput) -> Observable<[UserModel]> {
-        request(input)
+    func getUsers(_ input: GetUsersInput) async throws -> [UserModel] {
+        try await request(input)
     }
 }
 

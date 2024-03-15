@@ -103,7 +103,7 @@ extension APIService {
                 )
             )
 
-            keyDecodingStrategy = .useDefaultKeys
+            keyStrategyForDecodeResponse = .useDefaultKeys
         }
     }
 }

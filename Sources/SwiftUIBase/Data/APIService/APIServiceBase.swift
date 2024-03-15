@@ -29,17 +29,19 @@ open class APIServiceBase {
     /// the specified generic type `T` upon success, or an error upon failure.
     /// - Parameter input: An instance of `APIInputBase` representing the input parameters
     /// for the API request.
-    /// - Returns: A publisher that emits an type `T` or errors of type `Error`.
+    /// - Returns: An type `T` or errors of type `Error`.
     open func request<T: Codable, Parameters: Encodable>(
         _ input: APIInputBase<Parameters>
-    ) -> Observable<T> {
+    ) async throws -> T {
         print(input.requestDescription)
-
-        return requestData(input)
-            .tryMap { [unowned self] data -> T in
-                try decodeResponse(data, keyDecodingStrategy: input.keyDecodingStrategy)
-            }
-            .eraseToAnyPublisher()
+        do {
+            let data = try await requestData(input)
+            let result: T = try decodeResponse(data, keyDecodingStrategy: input.keyStrategyForDecodeResponse)
+            return result
+        } catch {
+            print("❌ [REQUEST FAIL]: \(error)")
+            throw error
+        }
     }
 
     /// Makes a data request to the API using the specified input parameters and
@@ -47,32 +49,56 @@ open class APIServiceBase {
     /// upon success, or an error upon failure.
     /// - Parameter input: An instance of `APIInputBase` representing the input parameters
     /// for the API request.
-    /// - Returns: A publisher that emits an `APIResponse` of type `U` or errors of type `Error`.
+    /// - Returns: `Data` or errors of type `Error`.
     open func requestData<Parameters: Encodable>(
         _ input: APIInputBase<Parameters>
-    ) -> Observable<Data> {
-        manager.request(
-            input.urlString,
-            method: input.method,
-            parameters: input.parameters,
-            encoder: input.encoder,
-            headers: input.headers
-        )
-        .publishData()
-        .tryMap { [unowned self] dataResponse -> Data in
-            try processMap(dataResponse)
+    ) async throws -> Data {
+        // You must resume the continuation exactly once.
+        return try await withCheckedThrowingContinuation { continuation in
+            manager.request(
+                input.urlString,
+                method: input.method,
+                parameters: input.parameters,
+                encoder: input.encoder,
+                headers: input.headers
+            )
+            .responseData { dataResponse in
+                switch dataResponse.result {
+                case let .success(data):
+                    guard let statusCode = dataResponse.response?.statusCode else {
+                        continuation.resume(throwing: APIUnknownError(statusCode: nil))
+                        return
+                    }
+                    let urlRequest = dataResponse.response?.url?.absoluteString ?? ""
+
+                    switch statusCode {
+                    case 200 ..< 300:
+                        let responseJSON = try? JSONSerialization.jsonObject(with: data)
+
+                        print("👍 [\(statusCode)] \(urlRequest)")
+                        print("[RESPONSE JSON]: \(responseJSON ?? "Empty")")
+
+                        continuation.resume(returning: data)
+                    default:
+                        let error = self.handleResponseError(dataResponse: dataResponse, data: data)
+
+                        print("❌ [\(statusCode)] \(urlRequest)")
+                        print("[RESPONSE ERROR]: \(error)")
+
+                        continuation.resume(throwing: error)
+                    }
+                case let .failure(aFError):
+                    continuation.resume(throwing: self.handleAFError(error: aFError))
+                }
+            }
         }
-        .tryCatch { [unowned self] error -> Observable<Data> in
-            try handleRequestError(error, input: input)
-        }
-        .eraseToAnyPublisher()
     }
 
     ///  Processes the given data response and returns an `APIResponse` containing parsed data
     ///  of type `U`.
     /// - Parameter dataResponse: The Alamofire `DataResponse` containing the data and
     /// any error encountered during the request.
-    /// - Returns: An `APIResponse` with parsed data of type `U`.
+    /// - Returns: `Data`.
     open func processMap(
         _ dataResponse: DataResponse<Data, AFError>
     ) throws -> Data {
@@ -108,9 +134,10 @@ open class APIServiceBase {
 
     // MARK: - Decode response.
 
-    /// Description
-    /// - Parameter apiResponse: apiResponse description
-    /// - Returns: description
+    /// Decodes the provided data into a generic type `T` conforming to `Codable`.
+    /// - Parameter data: The `Data` to be decoded.
+    /// - Parameter keyDecodingStrategy: The key decoding strategy to be used during decoding.
+    /// - Returns: An instance of type `T` decoded from the provided data and throws an error if decoding fails.
     open func decodeResponse<T: Codable>(
         _ data: Data,
         keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy
@@ -140,7 +167,7 @@ open class APIServiceBase {
     open func handleRequestError<Parameters: Encodable>(
         _ error: Error,
         input: APIInputBase<Parameters>
-    ) throws -> Observable<Data> {
+    ) throws -> Error {
         throw error
     }
 
@@ -154,5 +181,33 @@ open class APIServiceBase {
         data: Data?
     ) -> Error {
         APIUnknownError(statusCode: dataResponse.response?.statusCode)
+    }
+
+    /// Handles Alamofire errors and converts them to a more generic Error type.
+    /// - Parameter error: The Alamofire error to be handled.
+    /// - Returns: A more generic Error type representing the converted error.
+    open func handleAFError(error: AFError) -> Error {
+        if let underlyingError = error.underlyingError {
+            let nserror = underlyingError as NSError
+            let code = nserror.code
+            if code == NSURLErrorNotConnectedToInternet ||
+                code == NSURLErrorTimedOut ||
+                code == NSURLErrorInternationalRoamingOff ||
+                code == NSURLErrorDataNotAllowed ||
+                code == NSURLErrorCannotFindHost ||
+                code == NSURLErrorCannotConnectToHost ||
+                code == NSURLErrorNetworkConnectionLost
+            {
+                var userInfo = nserror.userInfo
+                userInfo[NSLocalizedDescriptionKey] = "Unable to connect to the server"
+                let currentError = NSError(
+                    domain: nserror.domain,
+                    code: code,
+                    userInfo: userInfo
+                )
+                return currentError
+            }
+        }
+        return error
     }
 }

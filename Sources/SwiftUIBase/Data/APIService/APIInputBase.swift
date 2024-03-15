@@ -14,7 +14,7 @@ open class APIInputBase<Parameters: Encodable> {
     public var method: HTTPMethod
     public var encoder: ParameterEncoder
     public var parameters: Parameters?
-    public var keyDecodingStrategy = JSONDecoder.KeyDecodingStrategy.convertFromSnakeCase
+    public var keyStrategyForDecodeResponse = JSONDecoder.KeyDecodingStrategy.convertFromSnakeCase
     public var accessToken: String?
     public var isUseCache = false
 
@@ -45,8 +45,8 @@ open class APIInputBase<Parameters: Encodable> {
             self.encoder = encoder
         } else {
             self.encoder = method == .get
-                ? APIHelperBase.getURLParameterEncoder()
-                : APIHelperBase.getJSONParameterEncoder()
+                ? APIHelperBase.encodeParameterForURL()
+                : APIHelperBase.encodeParameterForJSON()
         }
     }
 }

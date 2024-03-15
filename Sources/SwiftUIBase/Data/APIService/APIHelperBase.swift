@@ -9,14 +9,13 @@ import Alamofire
 import Foundation
 
 public enum APIHelperBase {
-    public static func getURLParameterEncoder(
+    public static func encodeParameterForURL(
         keyEncoding: URLEncodedFormEncoder.KeyEncoding = .convertToSnakeCase
     ) -> ParameterEncoder {
-        let urlEncoder = URLEncodedFormEncoder(keyEncoding: keyEncoding)
-        return URLEncodedFormParameterEncoder(encoder: urlEncoder)
+        URLEncodedFormParameterEncoder(encoder: .init(keyEncoding: keyEncoding))
     }
 
-    public static func getJSONParameterEncoder(
+    public static func encodeParameterForJSON(
         keyEncoding: JSONEncoder.KeyEncodingStrategy = .convertToSnakeCase
     ) -> ParameterEncoder {
         let jsonEncoder = JSONEncoder()

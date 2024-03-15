@@ -36,7 +36,7 @@ open class APIServiceBase {
         print(input.requestDescription)
         do {
             let data = try await requestData(input)
-            let result: T = try decodeResponse(data, keyDecodingStrategy: input.keyDecodingStrategy)
+            let result: T = try decodeResponse(data, keyDecodingStrategy: input.keyStrategyForDecodeResponse)
             return result
         } catch {
             print("❌ [REQUEST FAIL]: \(error)")
@@ -134,9 +134,10 @@ open class APIServiceBase {
 
     // MARK: - Decode response.
 
-    /// Description
-    /// - Parameter apiResponse: apiResponse description
-    /// - Returns: description
+    /// Decodes the provided data into a generic type `T` conforming to `Codable`.
+    /// - Parameter data: The `Data` to be decoded.
+    /// - Parameter keyDecodingStrategy: The key decoding strategy to be used during decoding.
+    /// - Returns: An instance of type `T` decoded from the provided data and throws an error if decoding fails.
     open func decodeResponse<T: Codable>(
         _ data: Data,
         keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy

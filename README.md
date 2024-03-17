@@ -16,7 +16,7 @@ Once you have your Swift package set up, adding SwiftUIBase as a dependency is a
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/phungocit/SwiftUIBase.git", from: "1.0.0")
+    .package(url: "https://github.com/phungocit/SwiftUIBase.git", from: "1.0.3")
 ],
 targets: [
     .target(name: "YourTarget", dependencies: ["SwiftUIBase"]),
@@ -72,8 +72,8 @@ extension RepoModel {
 ```swift
 // MARK: - GetRepos
 extension APIService {
-    func getRepos(_ input: GetReposInput) -> Observable<GetReposOutput> {
-        request(input)
+    func getRepos(_ input: GetReposInput) async throws -> GetReposOutput {
+        try await request(input)
     }
 }
 
@@ -125,28 +125,17 @@ extension APIService {
 4. Create ViewModel to call the APIService
 
 ```swift
+@MainActor
 final class ReposViewModel: ObservableObject {
     @Published var repos = [RepoModel]()
-    @Published var isShowLoading = false
 
-    private var disposables = Set<AnyCancellable>()
-
-    init() {
-        isShowLoading = true
-        getRepos()
-    }
-
-    func getRepos() {
-        APIService.shared.getRepos(
-            APIService.GetReposInput(getPageModel: GetPageModel(page: 1, perPage: 30))
-        )
-        .receive(on: DispatchQueue.main)
-        .sink { [unowned self] _ in
-            self.isShowLoading = false
-        } receiveValue: { [unowned self] repoReturned in
-            self.repos = repoReturned.repos ?? []
-        }
-        .store(in: &disposables)
+    func getRepos() async {
+        do {
+            let repoReturned = try await APIService.shared.getRepos(
+                APIService.GetReposInput(getPageModel: GetPageModel(page: 1, perPage: 30))
+            )
+            repos = repoReturned.repos ?? []
+        } catch {}
     }
 }
 ```
@@ -156,7 +145,7 @@ final class ReposViewModel: ObservableObject {
 ```swift
 struct ReposView: View {
     @StateObject private var viewModel = ReposViewModel()
-
+    @State private var isShowLoading = false
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading) {
@@ -166,8 +155,13 @@ struct ReposView: View {
             }
             .padding()
         }
-        .loadingView(isShowing: $viewModel.isShowLoading)
+        .loadingView(isShowing: $isShowLoading)
         .navigationTitle("Repos")
+        .task {
+            isShowLoading = true
+            await viewModel.getRepos()
+            isShowLoading = false
+        }
     }
 
     func repoItem(repo: RepoModel) -> some View {

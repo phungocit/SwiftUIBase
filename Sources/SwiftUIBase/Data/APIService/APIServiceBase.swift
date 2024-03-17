@@ -11,6 +11,9 @@ import Foundation
 
 open class APIServiceBase {
     public var manager: Session
+    open var logOptions: [APILogOptionBase] {
+        APILogOptionBase.default
+    }
 
     public convenience init() {
         let configuration = URLSessionConfiguration.default
@@ -33,13 +36,18 @@ open class APIServiceBase {
     open func request<T: Codable, Parameters: Encodable>(
         _ input: APIInputBase<Parameters>
     ) async throws -> T {
-        print(input.requestDescription)
+        if logOptions.contains(.request) {
+            print(input.requestDescription)
+        }
+
         do {
             let data = try await requestData(input)
             let result: T = try decodeResponse(data, keyDecodingStrategy: input.keyStrategyForDecodeResponse)
             return result
         } catch {
-            print("❌ [REQUEST FAIL]: \(error)")
+            if logOptions.contains(.error) {
+                print("❌ [REQUEST FAIL]: \(error)")
+            }
             throw error
         }
     }
@@ -62,52 +70,25 @@ open class APIServiceBase {
                 encoder: input.encoder,
                 headers: input.headers
             )
-            .responseData { dataResponse in
-                switch dataResponse.result {
-                case let .success(data):
-                    guard let statusCode = dataResponse.response?.statusCode else {
-                        continuation.resume(throwing: APIUnknownError(statusCode: nil))
-                        return
-                    }
-                    let urlRequest = dataResponse.response?.url?.absoluteString ?? ""
-
-                    switch statusCode {
-                    case 200 ..< 300:
-                        let responseJSON = try? JSONSerialization.jsonObject(with: data)
-
-                        print("👍 [\(statusCode)] \(urlRequest)")
-                        print("[RESPONSE JSON]: \(responseJSON ?? "Empty")")
-
-                        continuation.resume(returning: data)
-                    default:
-                        let error = self.handleResponseError(dataResponse: dataResponse, data: data)
-
-                        print("❌ [\(statusCode)] \(urlRequest)")
-                        print("[RESPONSE ERROR]: \(error)")
-
-                        continuation.resume(throwing: error)
-                    }
-                case let .failure(aFError):
-                    continuation.resume(throwing: self.handleAFError(error: aFError))
-                }
+            .responseData { [unowned self] data in
+                processResponseData(continuation: continuation, data)
             }
         }
     }
 
-    ///  Processes the given data response and returns an `APIResponse` containing parsed data
-    ///  of type `U`.
-    /// - Parameter dataResponse: The Alamofire `DataResponse` containing the data and
-    /// any error encountered during the request.
-    /// - Returns: `Data`.
-    open func processMap(
+    /// Processes the response data from an Alamofire data response.
+    /// - Parameters:
+    ///   - continuation: A checked continuation that will be used to resume the asynchronous computation.
+    ///   - dataResponse: The Alamofire data response containing the result data or error.
+    open func processResponseData(
+        continuation: CheckedContinuation<Data, Error>,
         _ dataResponse: DataResponse<Data, AFError>
-    ) throws -> Data {
-        let error: Error
-
+    ) {
         switch dataResponse.result {
         case let .success(data):
             guard let statusCode = dataResponse.response?.statusCode else {
-                throw APIUnknownError(statusCode: nil)
+                continuation.resume(throwing: APIUnknownError(statusCode: nil))
+                return
             }
             let urlRequest = dataResponse.response?.url?.absoluteString ?? ""
 
@@ -115,21 +96,31 @@ open class APIServiceBase {
             case 200 ..< 300:
                 let responseJSON = try? JSONSerialization.jsonObject(with: data)
 
-                print("👍 [\(statusCode)] \(urlRequest)")
-                print("[RESPONSE JSON]: \(responseJSON ?? "Empty")")
+                if logOptions.contains(.responseStatus) {
+                    print("👍 [\(statusCode)] \(urlRequest)")
+                }
 
-                return data
+                if logOptions.contains(.responseJSON) {
+                    print("[RESPONSE JSON]: \(responseJSON ?? "Empty")")
+                }
+
+                continuation.resume(returning: data)
             default:
-                error = handleResponseError(dataResponse: dataResponse, data: data)
+                let error = handleResponseError(dataResponse: dataResponse, data: data)
 
-                print("❌ [\(statusCode)] \(urlRequest)")
+                if logOptions.contains(.responseStatus) {
+                    print("❌ [\(statusCode)] \(urlRequest)")
+                }
+
+                if logOptions.contains(.error) {
+                    print("[RESPONSE ERROR]: \(error)")
+                }
+
+                continuation.resume(throwing: error)
             }
-
         case let .failure(aFError):
-            error = aFError
+            continuation.resume(throwing: handleAFError(error: aFError))
         }
-
-        throw error
     }
 
     // MARK: - Decode response.
@@ -145,14 +136,17 @@ open class APIServiceBase {
         do {
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = keyDecodingStrategy
-
             let items = try decoder.decode(T.self, from: data)
 
-            print("[RESPONSE DECODE]: \(items)")
+            if logOptions.contains(.responseDecode) {
+                print("[RESPONSE DECODE]: \(items)")
+            }
 
             return items
         } catch {
-            print("❌ [RESPONSE DECODE FAIL]: \(error)")
+            if logOptions.contains(.error) {
+                print("❌ [RESPONSE DECODE FAIL]: \(error)")
+            }
             throw APIResponseDecodeError(error)
         }
     }
@@ -196,8 +190,7 @@ open class APIServiceBase {
                 code == NSURLErrorDataNotAllowed ||
                 code == NSURLErrorCannotFindHost ||
                 code == NSURLErrorCannotConnectToHost ||
-                code == NSURLErrorNetworkConnectionLost
-            {
+                code == NSURLErrorNetworkConnectionLost {
                 var userInfo = nserror.userInfo
                 userInfo[NSLocalizedDescriptionKey] = "Unable to connect to the server"
                 let currentError = NSError(
